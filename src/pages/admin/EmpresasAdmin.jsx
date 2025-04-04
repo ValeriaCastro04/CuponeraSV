@@ -54,31 +54,39 @@ const EmpresasAdmin = () => {
 
   const guardarEmpresa = async (empresa) => {
     const contraseñaTemporal = generarContraseñaTemporal();
-
+  
     try {
-      // ✅ Crear usuario usando la instancia secundaria
+      // 👇 Si es edición (viene con ID)
+      if (empresa.id) {
+        await setDoc(doc(db, "empresas", empresa.id), empresa);
+        toast.success("Empresa actualizada");
+        cargarEmpresas();
+        return;
+      }
+  
+      // 👇 Registro nuevo
       const userCredential = await createUserWithEmailAndPassword(
         secondaryAuth,
         empresa.correo,
         contraseñaTemporal
       );
-
+  
       const nuevoUID = userCredential.user.uid;
-
-      // ✅ Crear documento del usuario con rol empresa
+  
       await setDoc(doc(db, "usuarios", nuevoUID), {
         correo: empresa.correo,
         nombre: empresa.nombre,
         rol: "empresa",
         primerLogin: true
       });
-
-      // ✅ Guardar en colección de empresas
-      await addDoc(collection(db, "empresas"), empresa);
-
-      // ✅ Enviar correo con contraseña
+  
+      await setDoc(doc(db, "empresas", nuevoUID), {
+        ...empresa,
+        uid: nuevoUID
+      });
+  
       await sendPasswordEmail(empresa.correo, empresa.nombre, contraseñaTemporal);
-
+  
       toast.success("Empresa registrada y correo enviado");
       cargarEmpresas();
     } catch (err) {
@@ -90,6 +98,7 @@ const EmpresasAdmin = () => {
       }
     }
   };
+  
 
   const eliminarEmpresa = async (id) => {
     if (confirm("¿Seguro que deseas eliminar esta empresa?")) {

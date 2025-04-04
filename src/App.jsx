@@ -33,6 +33,8 @@ function App() {
   return (
     <>
       <Routes>
+      <Route path="/login" element={<Login />} />
+
         {/* Mostrar Header solo en rutas públicas */}
         <Route
           path="/"

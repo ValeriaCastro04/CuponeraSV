@@ -6,9 +6,9 @@ import {
   doc,
   updateDoc,
   deleteDoc,
-  getFirestore,
   query,
   where,
+  getFirestore,
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { toast } from "react-toastify";
@@ -23,12 +23,28 @@ const GestionarEmpleados = () => {
 
   const obtenerEmpleados = async () => {
     try {
+      // Buscar empresa por el correo del usuario autenticado
+      const empresasSnapshot = await getDocs(collection(db, "empresas"));
+      const empresaDoc = empresasSnapshot.docs.find(
+        (doc) => doc.data().correo === auth.currentUser.email
+      );
+
+      if (!empresaDoc) {
+        toast.error("Empresa no encontrada");
+        return;
+      }
+
+      const empresaId = empresaDoc.id;
+
       const empleadosRef = collection(db, "empleados");
-      const q = query(empleadosRef, where("empresaId", "==", auth.currentUser.uid));
+      const q = query(empleadosRef, where("empresaId", "==", empresaId));
       const snapshot = await getDocs(q);
-      const empleadosData = snapshot.docs
-        .map((doc) => ({ id: doc.id, ...doc.data() }))
-        .filter((emp) => emp.empresaId === auth.currentUser.uid);
+
+      const empleadosData = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
       setEmpleados(empleadosData);
     } catch (error) {
       console.error("Error al obtener empleados:", error);
@@ -45,18 +61,34 @@ const GestionarEmpleados = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
       if (editandoId) {
         await updateDoc(doc(db, "empleados", editandoId), form);
         toast.success("Empleado actualizado correctamente");
         setEditandoId(null);
       } else {
+        // Buscar empresa por el correo del usuario autenticado
+        const empresasSnapshot = await getDocs(collection(db, "empresas"));
+        const empresaDoc = empresasSnapshot.docs.find(
+          (doc) => doc.data().correo === auth.currentUser.email
+        );
+
+        if (!empresaDoc) {
+          toast.error("No se encontró la empresa asociada.");
+          return;
+        }
+
+        const empresaFirestoreId = empresaDoc.id;
+
         await addDoc(collection(db, "empleados"), {
           ...form,
-          empresaId: auth.currentUser.uid,
+          empresaId: empresaFirestoreId, // 🔥 Usamos el ID real de la empresa
         });
+
         toast.success("Empleado registrado correctamente");
       }
+
       setForm({ nombres: "", apellidos: "", correo: "" });
       obtenerEmpleados();
     } catch (error) {
@@ -66,7 +98,11 @@ const GestionarEmpleados = () => {
   };
 
   const handleEditar = (empleado) => {
-    setForm({ nombres: empleado.nombres, apellidos: empleado.apellidos, correo: empleado.correo });
+    setForm({
+      nombres: empleado.nombres,
+      apellidos: empleado.apellidos,
+      correo: empleado.correo,
+    });
     setEditandoId(empleado.id);
   };
 
@@ -76,7 +112,7 @@ const GestionarEmpleados = () => {
       toast.success("Empleado eliminado");
       obtenerEmpleados();
     } catch (error) {
-      console.error("Error al eliminar:", error);
+      console.error("Error al eliminar empleado:", error);
       toast.error("No se pudo eliminar el empleado");
     }
   };

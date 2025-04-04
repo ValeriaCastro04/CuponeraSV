@@ -68,6 +68,8 @@ const CrearOferta = () => {
         fechaFin: Timestamp.fromDate(new Date(form.fechaFin)),
         fechaLimiteUso: Timestamp.fromDate(new Date(form.fechaLimiteUso)),
         estado: "En espera de aprobación",
+        vendidos:0,
+        ingresos:0,
         empresaId: auth.currentUser.uid,
         fechaCreacion: Timestamp.now()
       });

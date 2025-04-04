@@ -15,6 +15,7 @@ export const sendPasswordEmail = async (toEmail, empresaNombre, passwordTemporal
   );
 };
 
+// Email de compra exitosa
 export const enviarCorreoCompraExitosa = async ({
   to_email,
   nombre_cliente,
@@ -25,19 +26,26 @@ export const enviarCorreoCompraExitosa = async ({
   codigo_cupon,
   fecha_limite
 }) => {
-  return emailjs.send(
-    "service_23dlvvs", 
-    "template_ig4pmtu", 
-    {
-      to_email,
-      nombre_cliente,
-      titulo_oferta,
-      descripcion,
-      precio_oferta,
-      precio_regular,
-      codigo_cupon,
-      fecha_limite
-    },
+  if (!to_email) {
+    console.warn("No se envió el correo: dirección vacía.");
+    return;
+  }
+
+  const templateParams = {
+    to_email,
+    nombre_cliente,
+    titulo_oferta,
+    descripcion,
+    precio_oferta,
+    precio_regular,
+    codigo_cupon,
+    fecha_limite
+  };
+
+  return await emailjs.send(
+    "service_23dlvvs",
+    "template_ig4pmtu",
+    templateParams,
     "n2WfyWZHSr9i4YLs5"
   );
 };
