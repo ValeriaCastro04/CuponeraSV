@@ -19,6 +19,8 @@ import Register from "./pages/auth/Register";
 import UserLogin from "./pages/auth/UserLogin";
 import UserDashboard from "./pages/User/UserDashboard";
 import DetallesOferta from "./pages/DetallesOferta";
+import CompraExitosa from "./pages/User/CompraExitosa";
+import MisCupones from "./pages/User/MisCupones";
 
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -67,11 +69,36 @@ function App() {
               <UserLogin />
             </>
           }
+          
         />
         <Route
-          path="/user-dashboard"
-          element={<UserDashboard/>}/>
-        <Route path="/detalles-oferta/:ofertaId" element={<DetallesOferta />} />
+        path="/detalles-oferta/:ofertaId"
+        element={
+          <>
+            <Header user={usuario} />
+            <DetallesOferta />
+          </>
+        }
+      />
+        <Route
+          path="/compra-exitosa"
+          element={
+            <>
+              <Header user={usuario} />
+              <CompraExitosa />
+            </>
+          }
+        />
+        <Route
+          path="/mis-cupones"
+          element={
+            <>
+              <Header user={usuario} />
+              <MisCupones />
+            </>
+          }
+        />
+        
 
 
         {/* ADMIN */}

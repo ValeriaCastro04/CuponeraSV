@@ -3,6 +3,7 @@ import { db } from "../services/firebase";
 import { doc, getDoc, collection, addDoc } from "firebase/firestore";
 import { useNavigate, useParams } from "react-router-dom";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { enviarCorreoCompraExitosa } from "../utils/sendEmail"; 
 
 const DetallesOferta = () => {
   const { ofertaId } = useParams();
@@ -51,63 +52,107 @@ const DetallesOferta = () => {
 
   const luhnCheck = (val) => {
     let sum = 0;
-    for (let i = 0; i < val.length; i++) {
-      let intVal = parseInt(val.substr(i, 1));
-      if (i % 2 === 0) {
-        intVal *= 2;
-        if (intVal > 9) {
-          intVal = 1 + (intVal % 10);
-        }
+    let shouldDouble = false;
+  
+    for (let i = val.length - 1; i >= 0; i--) {
+      let digit = parseInt(val.charAt(i));
+  
+      if (shouldDouble) {
+        digit *= 2;
+        if (digit > 9) digit -= 9;
       }
-      sum += intVal;
+  
+      sum += digit;
+      shouldDouble = !shouldDouble;
     }
+  
     return (sum % 10) === 0;
   };
+  
 
   const handlePayment = async () => {
     setError("");
+  
+    // Validaciones básicas
     if (!cardNumber || !expiryDate || !cardholderName || !cvc) {
       setError("Todos los campos son obligatorios");
       return;
     }
-
+  
     if (!luhnCheck(cardNumber)) {
       setError("Número de tarjeta inválido");
       return;
     }
-
+  
     if (!user || !user.emailVerified) {
       setError("Por favor, verifica tu correo electrónico antes de realizar una compra.");
       return;
     }
-
+  
     try {
+      // 1. Obtener código de la empresa
+      const empresaDoc = await getDoc(doc(db, "empresas", oferta.empresaId));
+      const codigoEmpresa = empresaDoc.exists() ? empresaDoc.data().codigo : "EMP";
+  
+      // 2. Generar código único
+      const codigoGenerado = `${codigoEmpresa}-${Math.floor(1000000 + Math.random() * 9000000)}`;
+  
+      // 3. Consultar datos del cliente
+      const clienteDoc = await getDoc(doc(db, "clientes", user.uid));
+      const cliente = clienteDoc.exists() ? clienteDoc.data() : null;
+  
+      if (!cliente) throw new Error("No se encontró el cliente en Firestore");
+  
+      // 4. Guardar cupón en Firestore
       const cupon = {
         userId: user.uid,
         ofertaId,
         titulo: oferta.titulo,
         descripcion: oferta.descripcion,
-        precioOferta: oferta.precioOferta,
-        precioRegular: oferta.precioRegular,
-        fechaCompra: new Date(),
-        fechaLimiteCupon: oferta.fechaLimiteUso,
-        codigo: Math.random().toString(36).substr(2, 9).toUpperCase(),
+        precio_oferta: oferta.precioOferta,
+        precio_regular: oferta.precioRegular,
+        fecha_compra: new Date(),
+        fecha_limite_cupon: oferta.fechaLimiteUso,
+        codigo: codigoGenerado,
+        estado: "disponible",
+        correoCliente: user.email
       };
-
+  
       await addDoc(collection(db, "CuponesComprados"), cupon);
-      alert("Tu pago ha sido exitoso, puedes revisar tu cupón en la sección de 'Mis Cupones'.");
-      navigate("/mis-cupones");
+
+      console.log("📧 Enviando correo a:", user.email);
+      console.log("📧 Datos cliente:", clienteData);
+
+  
+      // 5. Enviar correo con EmailJS
+      await enviarCorreoCompraExitosa({
+        to_email: user.email,
+        nombre_cliente: `${clienteData.nombres} ${clienteData.apellidos}`,
+        titulo_oferta: oferta.titulo,
+        descripcion: oferta.descripcion,
+        precio_oferta: oferta.precioOferta,
+        precio_regular: oferta.precioRegular,
+        codigo_cupon: codigoGenerado,
+        fecha_limite: new Date(oferta.fechaLimiteUso.seconds * 1000).toLocaleDateString("es-ES")
+      });
+        
+      // 6. Redirigir
+      navigate("/compra-exitosa");
+  
     } catch (error) {
-      console.error("Error al generar el cupón:", error);
-      setError("Hubo un error al procesar el pago. Inténtalo nuevamente.");
+      console.error("Error al procesar la compra:", error);
+      setError(`Error al procesar el pago. Intenta de nuevo. ${error.message}`);
     }
   };
+  
+  
+  
 
   if (!oferta) return <div className="text-center mt-6">Cargando oferta...</div>;
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold text-center text-red-600">{oferta.titulo}</h1>
+      <h1 className="text-3xl font-bold text-center text-orange-600">{oferta.titulo}</h1>
       <div className="border p-4 rounded-lg shadow-md mt-4">
         <img src={oferta.imgURL} alt={oferta.titulo} className="w-full h-60 object-cover rounded-md" />
         <p className="text-gray-600 mt-4">{oferta.descripcion}</p>
@@ -173,7 +218,7 @@ const DetallesOferta = () => {
 
         <button
           onClick={handlePayment}
-          className="mt-4 w-full bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+          className="mt-4 w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-orange-300"
         >
           Pagar
         </button>

@@ -13,3 +13,11 @@ export const validarLuhn = (numeroTarjeta) => {
   
     return sum % 10 === 0;
 };  
+
+/**
+ * Número de tarjeta	Resultado
+4242424242424242	✅ válido
+4111111111111111	✅ válido
+4012888888881881	✅ válido
+4000056655665556	✅ válido
+ */
