@@ -92,6 +92,7 @@ export default function UserLogin() {
                 placeholder="Ingresa tu correo"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                required
               />
             </div>
   
