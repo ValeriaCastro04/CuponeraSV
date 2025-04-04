@@ -1,8 +1,16 @@
 import { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
 import { auth, db } from "../services/firebase";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -12,32 +20,90 @@ const Login = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError(""); // Limpia errores anteriores
+    setError("");
+
     try {
-      // Autenticación con Firebase Auth
+      // 🔐 Intentar autenticación normal para admin/empresa/cliente
       const userCredential = await signInWithEmailAndPassword(auth, email, clave);
       const uid = userCredential.user.uid;
 
-      // Consulta al documento del usuario para obtener su rol
       const docRef = doc(db, "usuarios", uid);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
         const rol = docSnap.data().rol;
-        console.log("Login exitoso. Rol:", rol);
-
-        // Redirecciona según el rol
         if (rol === "admin") navigate("/admin");
         else if (rol === "empresa") navigate("/empresa");
         else if (rol === "cliente") navigate("/cliente");
         else setError("Rol no válido o no autorizado.");
       } else {
-        setError("No se encontró el perfil del usuario.");
+        // 🔍 Si no está en "usuarios", buscar en "empleados"
+        try {
+          const empleadosQuery = query(
+            collection(db, "empleados"),
+            where("correo", "==", email)
+          );
+          const empleadosSnap = await getDocs(empleadosQuery);
+      
+          if (!empleadosSnap.empty) {
+            const empleadoDoc = empleadosSnap.docs[0];
+            const empleadoData = empleadoDoc.data();
+      
+            const storedPassword = empleadoData.defaultPassword;
+      
+            if (clave === storedPassword) {
+              localStorage.setItem("empleadoCorreo", email);
+              navigate("/empleado-canje");
+              
+            } else {
+              setError("Contraseña incorrecta.");
+            }
+          } else {
+            setError("No se encontró el perfil del usuario.");
+          }
+        } catch (error) {
+          console.error("Error al validar empleado:", error);
+          setError("Error al verificar empleado.");
+        }
       }
+      
     } catch (err) {
-      console.error("Error al iniciar sesión:", err);
-      if (err.code === "auth/user-not-found") {
-        setError("El usuario no existe.");
+      // 👇 Si falla, buscar si es un empleado
+      if (
+        err.code === "auth/user-not-found" ||
+        err.code === "auth/invalid-credential"
+      ) {
+        try {
+          const empleadosQuery = query(
+            collection(db, "empleados"),
+            where("correo", "==", email)
+          );
+          const empleadosSnap = await getDocs(empleadosQuery);
+
+          if (!empleadosSnap.empty) {
+            const empleadoDoc = empleadosSnap.docs[0];
+            const empleadoData = empleadoDoc.data();
+            const storedPassword = empleadoData.defaultPassword;
+
+            if (clave === storedPassword) {
+              // ✅ Simular sesión
+              localStorage.setItem("empleadoCorreo", email);
+
+              if (!empleadoData.passwordChanged) {
+                navigate("/cambiarcontraseña");
+              } else {
+                navigate("/empleado-canje");
+              }
+            } else {
+              setError("Contraseña incorrecta.");
+            }
+          } else {
+            setError("El usuario no existe.");
+          }
+        } catch (e) {
+          console.error("Error al validar empleado:", e);
+          setError("Error al intentar iniciar sesión.");
+        }
       } else if (err.code === "auth/wrong-password") {
         setError("Contraseña incorrecta.");
       } else {
@@ -47,30 +113,43 @@ const Login = () => {
   };
 
   return (
-    <div className="p-6 max-w-md mx-auto">
-      <h2 className="text-2xl font-bold mb-4">Iniciar sesión</h2>
-      {error && <p className="text-red-500">{error}</p>}
-      <form onSubmit={handleLogin} className="flex flex-col gap-4">
-        <input
-          type="email"
-          placeholder="Correo electrónico"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="border p-2 rounded"
-          required
-        />
-        <input
-          type="password"
-          placeholder="Contraseña"
-          value={clave}
-          onChange={(e) => setClave(e.target.value)}
-          className="border p-2 rounded"
-          required
-        />
-        <button className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition" type="submit">
-          Entrar
-        </button>
-      </form>
+    <div className="min-h-screen bg-[#FFF4EC] flex items-center justify-center px-4">
+      <div className="bg-white shadow-md p-8 rounded-xl w-full max-w-md">
+        <h2 className="text-3xl font-bold text-orange-600 mb-4 text-center">Iniciar Sesión</h2>
+        {error && <p className="text-red-500 mb-4 text-sm text-center">{error}</p>}
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div>
+            <label className="block text-sm text-gray-700 mb-1">Correo electrónico</label>
+            <input
+              type="email"
+              className="w-full border border-orange-300 rounded-lg px-4 py-2"
+              placeholder="ejemplo@correo.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-700 mb-1">Contraseña</label>
+            <input
+              type="password"
+              className="w-full border border-orange-300 rounded-lg px-4 py-2"
+              placeholder="Tu contraseña"
+              value={clave}
+              onChange={(e) => setClave(e.target.value)}
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg transition"
+          >
+            Iniciar sesión
+          </button>
+        </form>
+      </div>
     </div>
   );
 };

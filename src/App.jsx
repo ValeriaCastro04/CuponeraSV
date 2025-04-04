@@ -6,7 +6,7 @@ import AdminDashboard from "./pages/admin/Dashboard";
 import EmpresasAdmin from "./pages/admin/EmpresasAdmin";
 import RubrosAdmin from "./pages/admin/RubrosAdmin";
 import CambiarContraseña from "./pages/CambiarContraseña";
-import EmpresaDashboard from "./pages/empresa/EmpresaDashboard"; 
+import EmpresaDashboard from "./pages/empresa/EmpresaDashboard";
 import CrearOferta from "./pages/empresa/CrearOferta";
 import InicioEmpresa from "./pages/empresa/InicioEmpresa";
 import OfertasEmpresa from "./pages/empresa/OfertasEmpresa";
@@ -17,10 +17,11 @@ import EmpresasAliadas from "./pages/EmpresasAliadas";
 import Header from "./components/Header";
 import Register from "./pages/auth/Register";
 import UserLogin from "./pages/auth/UserLogin";
-import UserDashboard from "./pages/User/UserDashboard";
 import DetallesOferta from "./pages/DetallesOferta";
 import CompraExitosa from "./pages/User/CompraExitosa";
 import MisCupones from "./pages/User/MisCupones";
+import EmpleadoCanje from "./pages/EmpleadoCanje";
+import GestionarClientes from "./pages/admin/GestionarClientes";
 
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -33,9 +34,9 @@ function App() {
   return (
     <>
       <Routes>
-      <Route path="/login" element={<Login />} />
+        <Route path="/login" element={<Login />} />
 
-        {/* Mostrar Header solo en rutas públicas */}
+        {/* Rutas públicas */}
         <Route
           path="/"
           element={
@@ -71,17 +72,16 @@ function App() {
               <UserLogin />
             </>
           }
-          
         />
         <Route
-        path="/detalles-oferta/:ofertaId"
-        element={
-          <>
-            <Header user={usuario} />
-            <DetallesOferta />
-          </>
-        }
-      />
+          path="/detalles-oferta/:ofertaId"
+          element={
+            <>
+              <Header user={usuario} />
+              <DetallesOferta />
+            </>
+          }
+        />
         <Route
           path="/compra-exitosa"
           element={
@@ -100,7 +100,8 @@ function App() {
             </>
           }
         />
-        
+
+        <Route path="/empleado-canje" element={<EmpleadoCanje />} />
 
 
         {/* ADMIN */}
@@ -114,6 +115,8 @@ function App() {
           <Route path="empresas" element={<EmpresasAdmin />} />
           <Route path="rubros" element={<RubrosAdmin />} />
           <Route path="ofertas" element={<OfertasAdmin />} />
+          <Route path="clientes" element={<GestionarClientes />} />
+
         </Route>
 
         {/* EMPRESA */}
@@ -137,7 +140,7 @@ function App() {
           <Route path="empleados" element={<GestionarEmpleados />} />
         </Route>
 
-        {/* RUTA POR DEFECTO */}
+        {/* CATCH-ALL */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
 

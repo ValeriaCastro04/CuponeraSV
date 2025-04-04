@@ -9,9 +9,12 @@ import {
   query,
   where,
   getFirestore,
+  setDoc
 } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+import { secondaryAuth } from "../../services/firebase";
 import { toast } from "react-toastify";
+import { sendPasswordEmail } from "../../utils/sendEmail"; 
 
 const GestionarEmpleados = () => {
   const [empleados, setEmpleados] = useState([]);
@@ -21,9 +24,13 @@ const GestionarEmpleados = () => {
   const db = getFirestore();
   const auth = getAuth();
 
+  const generateTemporaryPassword = (length = 8) => {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  };
+
   const obtenerEmpleados = async () => {
     try {
-      // Buscar empresa por el correo del usuario autenticado
       const empresasSnapshot = await getDocs(collection(db, "empresas"));
       const empresaDoc = empresasSnapshot.docs.find(
         (doc) => doc.data().correo === auth.currentUser.email
@@ -61,41 +68,64 @@ const GestionarEmpleados = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     try {
       if (editandoId) {
         await updateDoc(doc(db, "empleados", editandoId), form);
         toast.success("Empleado actualizado correctamente");
         setEditandoId(null);
       } else {
-        // Buscar empresa por el correo del usuario autenticado
         const empresasSnapshot = await getDocs(collection(db, "empresas"));
         const empresaDoc = empresasSnapshot.docs.find(
           (doc) => doc.data().correo === auth.currentUser.email
         );
-
+  
         if (!empresaDoc) {
           toast.error("No se encontró la empresa asociada.");
           return;
         }
-
+  
         const empresaFirestoreId = empresaDoc.id;
-
-        await addDoc(collection(db, "empleados"), {
+        const tempPassword = generateTemporaryPassword();
+  
+        // ✅ Crear empleado en Firebase Auth usando secondaryAuth
+        const userCredential = await createUserWithEmailAndPassword(
+          secondaryAuth,
+          form.correo,
+          tempPassword
+        );
+  
+        const empleadoUID = userCredential.user.uid;
+  
+        await setDoc(doc(db, "empleados", empleadoUID), {
           ...form,
-          empresaId: empresaFirestoreId, // 🔥 Usamos el ID real de la empresa
+          empresaId: empresaFirestoreId,
+          passwordChanged: false,
+          defaultPassword: tempPassword, // 👈 esta es la que luego se usará para login manual
         });
-
-        toast.success("Empleado registrado correctamente");
+  
+        // ✅ Enviar correo con la contraseña
+        await sendPasswordEmail(form.correo, tempPassword);
+  
+        toast.success("Empleado registrado y correo enviado correctamente");
+  
+        // ✅ Cerrar sesión secundaria (opcional, buena práctica)
+        await secondaryAuth.signOut();
       }
-
+  
       setForm({ nombres: "", apellidos: "", correo: "" });
       obtenerEmpleados();
     } catch (error) {
-      console.error("Error al guardar:", error);
-      toast.error("Hubo un error al guardar el empleado");
+      console.error("Error al registrar empleado:", error);
+  
+      if (error.code === "auth/email-already-in-use") {
+        toast.error("Este correo ya está registrado.");
+      } else {
+        toast.error("Hubo un error al registrar el empleado.");
+      }
     }
   };
+  
 
   const handleEditar = (empleado) => {
     setForm({
@@ -119,7 +149,7 @@ const GestionarEmpleados = () => {
 
   return (
     <div className="ml-64 p-6 min-h-screen bg-[#FFF4EC]">
-      <h2 className="text-2xl font-bold text-[#4B59E4] mb-6">Gestión de Empleados</h2>
+      <h2 className="text-2xl font-bold text-[#4B59E4] mb-2">Gestión de Empleados</h2>
 
       <form
         onSubmit={handleSubmit}

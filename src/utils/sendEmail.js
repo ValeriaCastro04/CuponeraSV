@@ -1,9 +1,8 @@
 import emailjs from "@emailjs/browser";
 
-export const sendPasswordEmail = async (toEmail, empresaNombre, passwordTemporal) => {
+export const sendPasswordEmail = async (toEmail, passwordTemporal) => {
   const templateParams = {
     email: toEmail,         
-    empresa: empresaNombre,
     password: passwordTemporal
   };
 

@@ -132,6 +132,8 @@ const DetallesOferta = () => {
         codigo: codigoGenerado,
         estado: "disponible",
         correoCliente: clienteData.correo,
+        dui: clienteData.dui,
+        empresaId: oferta.empresaId,
       };
 
       await addDoc(collection(db, "CuponesComprados"), nuevoCupon);

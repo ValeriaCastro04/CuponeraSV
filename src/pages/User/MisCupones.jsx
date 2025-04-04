@@ -25,12 +25,12 @@ const MisCupones = () => {
 
       snapshot.docs.forEach((doc) => {
         const datos = doc.data();
-        const fechaUso = datos.fechaUso;
+        const canjeado = datos.canjeado === true || datos.estado === "canjeado";
         const vencimiento = datos.fecha_limite_cupon?.seconds
           ? new Date(datos.fecha_limite_cupon.seconds * 1000)
           : null;
 
-        if (fechaUso) nuevos.canjeados.push({ id: doc.id, ...datos });
+        if (canjeado) nuevos.canjeados.push({ id: doc.id, ...datos });
         else if (vencimiento && vencimiento < ahora) nuevos.vencidos.push({ id: doc.id, ...datos });
         else nuevos.disponibles.push({ id: doc.id, ...datos });
       });
