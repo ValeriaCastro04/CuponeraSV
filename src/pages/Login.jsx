@@ -141,13 +141,19 @@ const Login = () => {
               required
             />
           </div>
-
+          
           <button
             type="submit"
             className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg transition"
           >
             Iniciar sesión
           </button>
+          <p className="text-sm text-center text-gray-600 mt-4">
+            ¿Olvidaste tu contraseña?{" "}
+            <a href="/recuperar" className="text-orange-500 hover:underline">
+              Recuperar
+            </a>
+          </p>
         </form>
       </div>
     </div>

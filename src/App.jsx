@@ -22,6 +22,7 @@ import CompraExitosa from "./pages/User/CompraExitosa";
 import MisCupones from "./pages/User/MisCupones";
 import EmpleadoCanje from "./pages/EmpleadoCanje";
 import GestionarClientes from "./pages/admin/GestionarClientes";
+import RecuperarContraseña from "./pages/RecuperarContraseña";
 
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -140,6 +141,9 @@ function App() {
           <Route path="empleados" element={<GestionarEmpleados />} />
         </Route>
 
+        <Route
+          path="/recuperar-contraseña"
+          element={<RecuperarContraseña />}/>
         {/* CATCH-ALL */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

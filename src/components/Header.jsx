@@ -9,7 +9,7 @@ const Header = ({ user }) => {
   const handleLogout = () => {
     auth.signOut().then(() => {
       localStorage.removeItem('usuarioLogueado');
-      navigate('/login');
+      navigate('/user-login');
     });
   };
 
