@@ -1,7 +1,14 @@
-// src/firebase.js
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
+import {
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    signInWithPopup,
+    sendPasswordResetEmail,
+    sendEmailVerification,
+} from "firebase/auth";
+import { GoogleAuthProvider } from "firebase/auth";
+import { getFirestore, setDoc, doc, serverTimestamp } from "firebase/firestore";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDscY6VIiHNhRL_Q1S-GhUJXSEqB2DIMHI",
@@ -21,3 +28,14 @@ export const db = getFirestore(app);
 
 export const secondaryApp = initializeApp(firebaseConfig, "secondary");
 export const secondaryAuth = getAuth(secondaryApp);
+
+export {
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    signInWithPopup,
+    sendPasswordResetEmail,
+    sendEmailVerification,
+    setDoc,
+    doc,
+    serverTimestamp
+};

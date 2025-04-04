@@ -7,63 +7,112 @@ import EmpresasAdmin from "./pages/admin/EmpresasAdmin";
 import RubrosAdmin from "./pages/admin/RubrosAdmin";
 import CambiarContraseña from "./pages/CambiarContraseña";
 import EmpresaDashboard from "./pages/empresa/EmpresaDashboard"; 
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import CrearOferta from "./pages/empresa/CrearOferta";
 import InicioEmpresa from "./pages/empresa/InicioEmpresa";
 import OfertasEmpresa from "./pages/empresa/OfertasEmpresa";
 import GestionarEmpleados from "./pages/empresa/GestionarEmpleados";
 import OfertasAdmin from "./pages/admin/OfertasAdmin";
+import Home from "./pages/Home";
+import EmpresasAliadas from "./pages/EmpresasAliadas";
+import Header from "./components/Header";
+import Register from "./pages/auth/Register";
+import UserLogin from "./pages/auth/UserLogin";
+import UserDashboard from "./pages/User/UserDashboard";
+import DetallesOferta from "./pages/DetallesOferta";
+
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function App() {
   const { usuario, rol, primerLogin, loading } = useAuth();
 
-  // ✅ Esperamos a que cargue sesión y rol
   if (loading) return <div className="p-6 text-center">Cargando...</div>;
 
   return (
     <>
-    <Routes>
-      {/* Login disponible para todos */}
-      <Route path="/login" element={<Login />} />
+      <Routes>
+        {/* Mostrar Header solo en rutas públicas */}
+        <Route
+          path="/"
+          element={
+            <>
+              <Header user={usuario} />
+              <Home />
+            </>
+          }
+        />
+        <Route
+          path="/empresas-aliadas"
+          element={
+            <>
+              <Header user={usuario} />
+              <EmpresasAliadas />
+            </>
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            <>
+              <Header user={usuario} />
+              <Register />
+            </>
+          }
+        />
+        <Route
+          path="/user-login"
+          element={
+            <>
+              <Header user={usuario} />
+              <UserLogin />
+            </>
+          }
+        />
+        <Route
+          path="/user-dashboard"
+          element={<UserDashboard/>}/>
+        <Route path="/detalles-oferta/:ofertaId" element={<DetallesOferta />} />
 
-      {/* ADMIN */}
-      <Route
-        path="/admin"
-        element={
-          usuario && rol === "admin" ? <AdminLayout /> : <Navigate to="/login" />
-        }
-      >
-        <Route index element={<AdminDashboard />} />
-        <Route path="empresas" element={<EmpresasAdmin />} />
-        <Route path="rubros" element={<RubrosAdmin />} />
-        <Route path="ofertas" element={<OfertasAdmin />} />
-      </Route>
 
-      {/* EMPRESA */}
-      <Route
-        path="/empresa"
-        element={
-          usuario && rol === "empresa" ? (
-            primerLogin ? (
-              <CambiarContraseña />
+        {/* ADMIN */}
+        <Route
+          path="/admin"
+          element={
+            usuario && rol === "admin" ? <AdminLayout /> : <Navigate to="/login" />
+          }
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="empresas" element={<EmpresasAdmin />} />
+          <Route path="rubros" element={<RubrosAdmin />} />
+          <Route path="ofertas" element={<OfertasAdmin />} />
+        </Route>
+
+        {/* EMPRESA */}
+        <Route
+          path="/empresa"
+          element={
+            usuario && rol === "empresa" ? (
+              primerLogin ? (
+                <CambiarContraseña />
+              ) : (
+                <EmpresaDashboard />
+              )
             ) : (
-              <EmpresaDashboard />
+              <Navigate to="/login" />
             )
-          ) : (
-            <Navigate to="/login" />
-          )
-        }
-      >
-      <Route index element={<InicioEmpresa />} />
-      <Route path="crear" element={<CrearOferta />}/>
-      <Route path="ofertas" element={<OfertasEmpresa />}/>
-      <Route path="empleados" element={<GestionarEmpleados />}/>
-      </Route>
-      {/* RUTA POR DEFECTO */}
-      <Route path="*" element={<Navigate to="/login" />} />
-    </Routes>
-    <ToastContainer position="top-right" autoClose={3000} />
+          }
+        >
+          <Route index element={<InicioEmpresa />} />
+          <Route path="crear" element={<CrearOferta />} />
+          <Route path="ofertas" element={<OfertasEmpresa />} />
+          <Route path="empleados" element={<GestionarEmpleados />} />
+        </Route>
+
+        {/* RUTA POR DEFECTO */}
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+
+      <ToastContainer position="top-right" autoClose={3000} />
     </>
   );
 }
